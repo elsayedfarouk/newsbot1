@@ -49,7 +49,7 @@ def load_settings() -> Settings:
     load_dotenv(ROOT / ".env")  # real environment variables (CI secrets) take precedence
     return Settings(
         gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
-        text_model=os.getenv("GEMINI_TEXT_MODEL", "gemini-2.5-flash"),
+        text_model=os.getenv("GEMINI_TEXT_MODEL", "gemini-3.5-flash-lite"),
         tts_voice=os.getenv("KOKORO_VOICE", "am_adam"),
         tts_speed=float(os.getenv("KOKORO_SPEED", "1.0")),
         country=os.getenv("COUNTRY", "US"),
