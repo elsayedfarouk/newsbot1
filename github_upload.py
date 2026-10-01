@@ -66,7 +66,7 @@ def upload_video(token: str, owner: str, repo_name: str, video_path: Path, branc
                  repo_folder: str = None) -> str:
     """Upload to <repo_folder>/<name>.mp4 (default news_videos/YYYYMMDD, date from the local folder) with retries."""
     if not token:
-        raise ValueError("GITHUB_UPLOAD_TOKEN is not set")
+        raise ValueError("GH_UPLOAD_TOKEN is not set")
     content = video_path.read_bytes()
     if len(content) > MAX_BYTES:
         raise ValueError(f"video is {len(content) / 1e6:.0f} MB; GitHub allows {MAX_BYTES // 10**6} MB per file")

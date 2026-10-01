@@ -47,7 +47,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_CREDENTIALS_B64: ${{ secrets.GOOGLE_CREDENTIALS_B64 }}
           ZERNIO_API_KEY: ${{ secrets.ZERNIO_API_KEY }}
-          GITHUB_UPLOAD_TOKEN: ${{ secrets.GITHUB_UPLOAD_TOKEN }}
+          GH_UPLOAD_TOKEN: ${{ secrets.GH_UPLOAD_TOKEN }}
         run: python main.py
 
       - name: Upload video (output/YYYYMMDD/ folder kept)
