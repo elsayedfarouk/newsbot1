@@ -72,6 +72,28 @@ OUTPUT: only the ready-to-post caption text. No explanations, no character-count
 """
 
 
+SOCIAL_PROMPT = """You are the social media editor of the news channel "NEWS TODAY".
+Write platform-specific copy for a short vertical video about this story.
+
+youtube_title: max 70 characters, curiosity-driven, no clickbait lies, no hashtags, no ALL CAPS.
+youtube_description: 400-900 characters. First line is a strong hook, then 2-3 short factual sentences,
+  a line inviting viewers to subscribe to NEWS TODAY, then 4-6 hashtags on the last line including #Shorts.
+facebook_description: 250-600 characters, conversational, ends with a question to spark comments,
+  followed by 5-8 relevant hashtags on the last line.
+Only use facts from the summary.
+
+NEWS TITLE: {title}
+TREND / TOPIC: {trend}
+SUMMARY:
+{summary}
+"""
+
+YOUTUBE_TITLE_MAX, YOUTUBE_DESCRIPTION_MAX, FACEBOOK_DESCRIPTION_MAX = 100, 5000, 2000
+# Google Sheet column order (use these as the header row)
+SHEET_COLUMNS = ["status", "category", "country", "title", "date", "summary", "image", "website", "link",
+                 "video_url", "tiktok_caption", "youtube_title", "youtube_description", "facebook_description"]
+
+
 def say(message: str) -> None:
     print(f"    - {message}", flush=True)
 
@@ -146,6 +168,21 @@ class TrendingNewsProcessor:
         if len(caption) > TIKTOK_MAX_CHARS:
             caption = caption[:TIKTOK_MAX_CHARS - 5].rsplit(" ", 1)[0]
         return caption
+
+    def generate_social_copy(self, title: str, summary: str, trend_keyword: str = "") -> dict:
+        """TikTok caption + YouTube title/description + Facebook description (each falls back to title/summary)."""
+        copy = {"tiktok_caption": self.generate_tiktok_caption(title, summary, trend_keyword),
+                "youtube_title": title, "youtube_description": summary, "facebook_description": summary}
+        try:
+            social = gemini_client.generate_json(
+                self.client, self.model,
+                SOCIAL_PROMPT.format(title=title, trend=trend_keyword, summary=summary), gemini_client.SocialCopy)
+            copy["youtube_title"] = social.youtube_title.strip()[:YOUTUBE_TITLE_MAX]
+            copy["youtube_description"] = social.youtube_description.strip()[:YOUTUBE_DESCRIPTION_MAX]
+            copy["facebook_description"] = social.facebook_description.strip()[:FACEBOOK_DESCRIPTION_MAX]
+        except Exception as exc:
+            say(f"Gemini social copy failed, using plain title/summary: {exc}")
+        return copy
 
     # ---------- processing ----------
     def is_duplicate(self, title: str, link: str) -> bool:
@@ -225,8 +262,9 @@ class TrendingNewsProcessor:
         return None
 
     # ---------- output ----------
-    def save_to_sheet(self, news_data: dict, category: str, video_path: str, caption: str) -> None:
+    def save_to_sheet(self, news_data: dict, category: str, video_url: str, copy: dict) -> None:
         values = ["pending", category, self.country, news_data.get("title"), news_data.get("date"),
                   news_data.get("summary"), news_data.get("image"), news_data.get("website"),
-                  news_data.get("link"), video_path, caption]
+                  news_data.get("link"), video_url, copy["tiktok_caption"], copy["youtube_title"],
+                  copy["youtube_description"], copy["facebook_description"]]
         googlesheet.add_row([str(v) if v is not None else "" for v in values], SPREADSHEET_NAME, SHEET_NAME)

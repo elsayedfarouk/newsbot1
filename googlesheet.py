@@ -38,12 +38,14 @@ def text_in_column(spreadsheet_name: str, sheet_name: str, text: str, column: in
 
 
 def test_add_row(spreadsheet_name: str = "TrendingNewsToday", sheet_name: str = "Trending") -> None:
-    """Append one demo row (same 11 columns the pipeline writes) to verify credentials and access."""
+    """Append one demo row (same 14 columns the pipeline writes) to verify credentials and access."""
     demo_row = [
         "test", "Trending", "US", "Demo headline - safe to delete", "2026-01-01",
         "Demo summary text for testing the Google Sheets connection.",
         "https://example.com/image.jpg", "example.com", "https://example.com/demo-story",
-        "output/20260101/demo.mp4", "Demo caption #test",
+        "https://github.com/user/repo/raw/main/news_videos/20260101/demo.mp4",
+        "Demo TikTok caption #test #news", "Demo YouTube title",
+        "Demo YouTube description. #Shorts #test", "Demo Facebook description? #test #news",
     ]
     add_row(demo_row, spreadsheet_name, sheet_name)
     print(f"Demo row added to '{spreadsheet_name}' / '{sheet_name}'")

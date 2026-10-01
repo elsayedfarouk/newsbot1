@@ -37,6 +37,12 @@ class Plan(BaseModel):
     focus_points: List[Point]
 
 
+class SocialCopy(BaseModel):
+    youtube_title: str
+    youtube_description: str
+    facebook_description: str
+
+
 def make_client(api_key: str) -> genai.Client:
     return genai.Client(api_key=api_key)
 
@@ -45,6 +51,16 @@ def generate_text(client, model: str, prompt: str) -> str:
     """Single-prompt text generation; returns stripped text ('' when the model returns none)."""
     response = client.models.generate_content(model=model, contents=prompt)
     return (response.text or "").strip()
+
+
+def generate_json(client, model: str, prompt: str, schema):
+    """Single-prompt generation parsed into a pydantic `schema` instance."""
+    response = client.models.generate_content(
+        model=model,
+        contents=prompt,
+        config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema),
+    )
+    return response.parsed
 
 
 def generate_plan(client, model: str, title: str, narration: str, image_path: Path) -> Plan:

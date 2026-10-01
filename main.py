@@ -78,15 +78,17 @@ def upload_to_github(settings: Settings, video_path: Path, pipe: Pipeline) -> st
 
 def publish(settings: Settings, processor, news: dict, video_path: Path, video_url: str, pipe: Pipeline) -> None:
     """Caption -> sheet row (with the GitHub video URL) -> TikTok. A failed TikTok upload keeps the sheet record."""
-    with pipe.step("Writing caption and saving to Google Sheet"):
-        caption = processor.generate_tiktok_caption(news["title"], news["summary"], news["trend"])
-        processor.save_to_sheet(news, CATEGORY, video_url, caption)
-        pipe.info(f"caption {len(caption)} chars, row saved to '{SHEET_NAME}'")
+    with pipe.step("Writing titles/descriptions and saving to Google Sheet"):
+        copy = processor.generate_social_copy(news["title"], news["summary"], news["trend"])
+        processor.save_to_sheet(news, CATEGORY, video_url, copy)
+        pipe.info(f'YouTube: "{copy["youtube_title"]}"')
+        pipe.info(f"TikTok caption {len(copy['tiktok_caption'])} chars, Facebook {len(copy['facebook_description'])} chars")
+        pipe.info(f"row saved to '{SHEET_NAME}'")
 
     with pipe.step("Publishing to TikTok"):
         try:
             publish_tiktok_video.publish_tiktok_video(
-                video_path, caption, settings.zernio_api_key, settings.tiktok_account_id)
+                video_path, copy["tiktok_caption"], settings.zernio_api_key, settings.tiktok_account_id)
         except Exception as exc:
             pipe.info(f"TikTok publish failed: {exc}")
 
