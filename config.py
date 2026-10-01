@@ -12,7 +12,6 @@ FONT_CANDIDATES = (
     Path("C:/Windows/Fonts/impact.ttf"),
     Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
 )
-DEFAULT_TIKTOK_ACCOUNT_ID = "6a7b7b3f77555aae01cd37d0"
 
 
 @dataclass(frozen=True)
@@ -27,6 +26,8 @@ class Settings:
     github_repo: str
     zernio_api_key: str
     tiktok_account_id: str
+    facebook_token: str
+    facebook_page_id: str
     font_path: Path
     work_dir: Path
     output_dir: Path
@@ -57,7 +58,9 @@ def load_settings() -> Settings:
         github_owner=first_env("GH_OWNER", "GITHUB_OWNER") or "elsayedfarouk",
         github_repo=first_env("GH_REPO", "GITHUB_REPO") or "public",
         zernio_api_key=os.getenv("ZERNIO_API_KEY", ""),
-        tiktok_account_id=os.getenv("TIKTOK_ACCOUNT_ID", DEFAULT_TIKTOK_ACCOUNT_ID),
+        tiktok_account_id=os.getenv("TIKTOK_ACCOUNT_ID", ""),
+        facebook_token=first_env("FACEBOOK_PAGE_TOKEN", "token_facebook"),
+        facebook_page_id=os.getenv("FACEBOOK_PAGE_ID", ""),
         font_path=find_font(),
         work_dir=ROOT / "work",
         output_dir=ROOT / "output",

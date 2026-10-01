@@ -48,6 +48,9 @@ jobs:
           GOOGLE_CREDENTIALS_B64: ${{ secrets.GOOGLE_CREDENTIALS_B64 }}
           ZERNIO_API_KEY: ${{ secrets.ZERNIO_API_KEY }}
           GH_UPLOAD_TOKEN: ${{ secrets.GH_UPLOAD_TOKEN }}
+          TIKTOK_ACCOUNT_ID: ${{ secrets.TIKTOK_ACCOUNT_ID }}
+          FACEBOOK_PAGE_TOKEN: ${{ secrets.FACEBOOK_PAGE_TOKEN }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
         run: python main.py
 
       - name: Upload video (output/YYYYMMDD/ folder kept)

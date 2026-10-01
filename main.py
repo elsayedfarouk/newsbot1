@@ -7,6 +7,7 @@ from pathlib import Path
 
 import audio
 import github_upload
+import post_to_facebook
 import publish_tiktok_video
 import video
 from config import Settings, load_settings
@@ -77,7 +78,7 @@ def upload_to_github(settings: Settings, video_path: Path, pipe: Pipeline) -> st
 
 
 def publish(settings: Settings, processor, news: dict, video_path: Path, video_url: str, pipe: Pipeline) -> None:
-    """Caption -> sheet row (with the GitHub video URL) -> TikTok. A failed TikTok upload keeps the sheet record."""
+    """Copy -> sheet row (with the GitHub video URL) -> TikTok -> Facebook. A failed post never loses the sheet record."""
     with pipe.step("Writing titles/descriptions and saving to Google Sheet"):
         copy = processor.generate_social_copy(news["title"], news["summary"], news["trend"])
         processor.save_to_sheet(news, CATEGORY, video_url, copy)
@@ -92,11 +93,20 @@ def publish(settings: Settings, processor, news: dict, video_path: Path, video_u
         except Exception as exc:
             pipe.info(f"TikTok publish failed: {exc}")
 
+    with pipe.step("Posting to Facebook"):
+        try:
+            result = post_to_facebook.post_video_from_url(
+                settings.facebook_token, settings.facebook_page_id, video_url,
+                copy["youtube_title"], copy["facebook_description"])
+            pipe.info(f"posted, video id {result.get('id')}")
+        except Exception as exc:
+            pipe.info(f"Facebook post failed: {exc}")
+
 
 def main() -> int:
     args = parse_args()
     settings = load_settings()
-    pipe = Pipeline(total_steps=7 if args.dry_run else 10)
+    pipe = Pipeline(total_steps=7 if args.dry_run else 11)
     print("newsbot - one trending news video" + ("  [dry run]" if args.dry_run else ""))
 
     import gemini_client

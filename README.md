@@ -1,13 +1,13 @@
 # newsbot
 
 Hourly: Google Trends -> article (newspaper) -> Gemini summary -> Kokoro voice + Gemini visual plan -> Whisper word timing
--> animated 1080x1920 video in `output/YYYYMMDD/` -> GitHub upload -> Google Sheet row (GitHub video URL + caption) -> TikTok via Zernio.
+-> animated 1080x1920 video in `output/YYYYMMDD/` -> GitHub upload -> Google Sheet row (GitHub video URL + caption) -> TikTok via Zernio -> Facebook Page.
 Duplicates are detected against the sheet (title column 4, link column 9).
 
 ## Setup
 1. Push this folder as its own repo.
-2. Repo secrets: `GEMINI_API_KEY`, `GOOGLE_CREDENTIALS_B64`, `ZERNIO_API_KEY`, `GH_UPLOAD_TOKEN`. Each run also uploads `output/` as an Actions artifact (7 days).
-3. Optional env: `COUNTRY`, `TIKTOK_ACCOUNT_ID`, `GH_OWNER`, `GH_REPO`, `GEMINI_TEXT_MODEL`, `KOKORO_VOICE`, `KOKORO_SPEED`.
+2. Repo secrets: `GEMINI_API_KEY`, `GOOGLE_CREDENTIALS_B64`, `ZERNIO_API_KEY`, `GH_UPLOAD_TOKEN`, `TIKTOK_ACCOUNT_ID`, `FACEBOOK_PAGE_TOKEN`, `FACEBOOK_PAGE_ID`. Each run also uploads `output/` as an Actions artifact (7 days).
+3. Optional env: `COUNTRY`, `GH_OWNER`, `GH_REPO`, `GEMINI_TEXT_MODEL`, `KOKORO_VOICE`, `KOKORO_SPEED`.
 
 ## Local
 ```
