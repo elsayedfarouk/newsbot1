@@ -2,7 +2,7 @@ name: hourly-news-video
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "23 * * * *"  # not minute 0: GitHub drops/delays the top-of-hour slot under load
   workflow_dispatch:
 
 concurrency:
