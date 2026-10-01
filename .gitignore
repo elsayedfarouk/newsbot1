@@ -1,0 +1,12 @@
+output/
+work/
+__pycache__/
+assets/*.ttf
+.env
+.venv/
+.env.*
+!.env.example
+.idea/
+credentials.json
+*.wav
+*.mp4
