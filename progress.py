@@ -4,6 +4,11 @@ import time
 from contextlib import contextmanager
 
 BAR_WIDTH = 28
+OK_MARK, FAIL_MARK = "\u2705", "\u274c"  # green check box, red cross
+
+# Emoji need UTF-8; Windows consoles often default to a legacy code page.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def fmt_time(seconds: float) -> str:
@@ -19,28 +24,36 @@ class Pipeline:
         self.index = 0
         self.started = time.time()
         self.timings = []
+        self.step_failed = False
 
     @contextmanager
     def step(self, title: str):
         self.index += 1
+        self.step_failed = False
         print(f"\n[{self.index}/{self.total}] {title}", flush=True)
         t0 = time.time()
         try:
             yield
         except Exception:
-            print(f"    x failed after {fmt_time(time.time() - t0)}", flush=True)
+            print(f"    {FAIL_MARK} failed after {fmt_time(time.time() - t0)}", flush=True)
             raise
         elapsed = time.time() - t0
-        self.timings.append((title, elapsed))
-        print(f"    ok done in {fmt_time(elapsed)}", flush=True)
+        self.timings.append((title, elapsed, not self.step_failed))
+        mark, word = (FAIL_MARK, "failed (continuing)") if self.step_failed else (OK_MARK, "done")
+        print(f"    {mark} {word} in {fmt_time(elapsed)}", flush=True)
 
     def info(self, message: str) -> None:
         print(f"    - {message}", flush=True)
 
+    def fail(self, message: str) -> None:
+        """A handled error: the run continues, but the step is marked failed."""
+        self.step_failed = True
+        print(f"    {FAIL_MARK} {message}", flush=True)
+
     def summary(self, result: str) -> None:
         print("\n" + "=" * 52)
-        for title, elapsed in self.timings:
-            print(f"  {title:<34}{fmt_time(elapsed):>8}")
+        for title, elapsed, ok in self.timings:
+            print(f"  {OK_MARK if ok else FAIL_MARK} {title:<32}{fmt_time(elapsed):>8}")
         print("-" * 52)
         print(f"  {'total':<34}{fmt_time(time.time() - self.started):>8}")
         print(f"  output: {result}")

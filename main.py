@@ -71,7 +71,7 @@ def upload_to_github(settings: Settings, video_path: Path, pipe: Pipeline) -> st
             url = github_upload.upload_video(settings.github_token, settings.github_owner,
                                              settings.github_repo, video_path)
         except Exception as exc:
-            pipe.info(f"GitHub upload failed: {exc}")
+            pipe.fail(f"GitHub upload failed: {exc}")
             return ""
         pipe.info(url)
         return url
@@ -91,7 +91,7 @@ def publish(settings: Settings, processor, news: dict, video_path: Path, video_u
             publish_tiktok_video.publish_tiktok_video(
                 video_path, copy["tiktok_caption"], settings.zernio_api_key, settings.tiktok_account_id)
         except Exception as exc:
-            pipe.info(f"TikTok publish failed: {exc}")
+            pipe.fail(f"TikTok publish failed: {exc}")
 
     with pipe.step("Posting to Facebook"):
         try:
@@ -100,7 +100,7 @@ def publish(settings: Settings, processor, news: dict, video_path: Path, video_u
                 copy["youtube_title"], copy["facebook_description"])
             pipe.info(f"posted, video id {result.get('id')}")
         except Exception as exc:
-            pipe.info(f"Facebook post failed: {exc}")
+            pipe.fail(f"Facebook post failed: {exc}")
 
 
 def main() -> int:
