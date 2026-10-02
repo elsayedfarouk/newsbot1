@@ -11,11 +11,12 @@ concurrency:
 
 permissions:
   contents: read
+  actions: write  # lets the run trigger its own next run
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
 
@@ -61,3 +62,19 @@ jobs:
           path: output/
           retention-days: 7
           if-no-files-found: ignore
+
+      - name: Chain the next run at minute 05 of the next hour
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          active=$(gh run list --workflow hourly.yml --repo "$GITHUB_REPOSITORY" --json databaseId,status             --jq "[.[] | select(.databaseId != ${{ github.run_id }}) | select(.status != \"completed\")] | length")
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$active" != "0" ]; then
+            echo "another run is active; leaving the chain to it"; exit 0
+          fi
+          queued=$(gh run list --workflow hourly.yml --repo "$GITHUB_REPOSITORY" --status queued --json databaseId --jq length)
+          [ "$queued" != "0" ] && { echo "next run already queued"; exit 0; }
+          now=$(date +%s); next=$(date -d "$(date -u +%Y-%m-%dT%H:05:00Z) + 1 hour" +%s)
+          [ $((next - now)) -gt 3600 ] && next=$((next - 3600))
+          sleep $((next - now))
+          gh workflow run hourly.yml --repo "$GITHUB_REPOSITORY" --ref "${{ github.ref_name }}"
