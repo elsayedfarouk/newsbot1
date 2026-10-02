@@ -1,10 +1,14 @@
 """Gemini calls: plain text generation and the visual plan (vision + JSON)."""
+import time
 from pathlib import Path
 from typing import List
 
 from google import genai
-from google.genai import types
+from google.genai import errors, types
 from pydantic import BaseModel, Field
+
+RETRY_STATUS = {429, 500, 502, 503, 504}  # rate limit / overloaded: worth waiting for
+RETRY_DELAYS = (5, 15, 45, 120)  # seconds before each retry (5 attempts in total)
 
 PLAN_PROMPT = """You design the on-screen visuals for a viral vertical news video (TikTok/Shorts).
 The narration below will be read aloud over the lead image. Produce:
@@ -47,15 +51,28 @@ def make_client(api_key: str) -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
+def generate_with_retry(client, **kwargs):
+    """`generate_content` that waits and retries on temporary Gemini errors (e.g. 503 high demand)."""
+    for attempt, delay in enumerate(RETRY_DELAYS + (None,), start=1):
+        try:
+            return client.models.generate_content(**kwargs)
+        except (errors.ServerError, errors.APIError) as exc:
+            if delay is None or getattr(exc, "code", None) not in RETRY_STATUS:
+                raise
+            print(f"    - Gemini {exc.code} (attempt {attempt}/{len(RETRY_DELAYS) + 1}); retrying in {delay}s", flush=True)
+            time.sleep(delay)
+
+
 def generate_text(client, model: str, prompt: str) -> str:
     """Single-prompt text generation; returns stripped text ('' when the model returns none)."""
-    response = client.models.generate_content(model=model, contents=prompt)
+    response = generate_with_retry(client, model=model, contents=prompt)
     return (response.text or "").strip()
 
 
 def generate_json(client, model: str, prompt: str, schema):
     """Single-prompt generation parsed into a pydantic `schema` instance."""
-    response = client.models.generate_content(
+    response = generate_with_retry(
+        client,
         model=model,
         contents=prompt,
         config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema),
@@ -65,7 +82,8 @@ def generate_json(client, model: str, prompt: str, schema):
 
 def generate_plan(client, model: str, title: str, narration: str, image_path: Path) -> Plan:
     image_part = types.Part.from_bytes(data=image_path.read_bytes(), mime_type="image/jpeg")
-    response = client.models.generate_content(
+    response = generate_with_retry(
+        client,
         model=model,
         contents=[image_part, PLAN_PROMPT.format(title=title, narration=narration)],
         config=types.GenerateContentConfig(
